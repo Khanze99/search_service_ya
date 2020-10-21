@@ -17,7 +17,7 @@ class ResultSearch(models.Model):
     query = models.CharField(verbose_name='Запрос', max_length=255)
     result = models.TextField(verbose_name='Результат запроса')
     query_date = models.DateTimeField(verbose_name='Дата запроса', auto_now_add=True)
-    bot_user = models.ForeignKey(BotUser, on_delete=models.CASCADE)
+    bot_user = models.ForeignKey(BotUser, on_delete=models.CASCADE, related_name='results')
 
     def __str__(self):
         return self.query
