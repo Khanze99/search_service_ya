@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from search_service_api.helpers import get_history, check_user_in_db
+from search_service_api.models import BotUser
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,24 +41,6 @@ class Command(BaseCommand):
         return self.CHOICE
 
     def callback_new_query(self, update, context):
-        update.message.reply_text(
-            'Введите запрос для поиска или команду /skip если хотите отменить запрос на геокодирование:')
-        return self.DATA
-
-    def skip(self, update, context):
-        text = 'Вы отменили запрос.'
-        keyboard = [
-            [
-                KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
-            ]
-        ]
-
-        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-        update.message.reply_text(text, reply_markup=reply_markup)
-        return self.CHOICE
-
-    def callback_message_new_query(self, update, context):
         user = update.message.from_user
         flag = check_user_in_db(user)
 
@@ -74,6 +57,26 @@ class Command(BaseCommand):
                                       reply_markup=reply_markup)
             return self.CREATE
 
+        update.message.reply_text(
+            'Введите запрос для поиска или команду /skip если хотите отменить запрос на геокодирование:')
+        return self.DATA
+
+    def skip(self, update, context):
+        text = 'Вы отменили запрос.'
+        keyboard = [
+            [
+                KeyboardButton('Новый поиск 🌏'),
+                KeyboardButton('История 💾')
+            ]
+        ]
+
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+        update.message.reply_text(text, reply_markup=reply_markup)
+
+        return self.CHOICE
+
+    def callback_message_new_query(self, update, context):
+        user = update.message.from_user
         query = update.message.text
         params = {'geocode': query,
                   'apikey': settings.YANDEX_GEOCODER_TOKEN,
@@ -130,10 +133,26 @@ class Command(BaseCommand):
         return self.CHOICE
 
     def callback_create_user(self, update, context):
-        ...
+        user = update.message.from_user
+        try:
+            BotUser.objects.create(user_id=user.id, username=user.username)
+        except:
+            BotUser.objects.create(user_id=user.id)
+
+        keyboard = [
+            [
+                KeyboardButton('Новый поиск 🌏'),
+                KeyboardButton('История 💾')
+            ]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+        update.message.reply_text(text='Пользователь создан. Выберите следующие действия на клавиатуре', reply_markup=reply_markup)
+
+        return self.CHOICE
 
     def skip_create_user(self, update, context):
-        ...
+        update.message.reply_text(text='Вы отказались. Для того чтобы перейти в начальное состояние используйте /start')
+        return ConversationHandler.END
 
     def main(self):
         updater = Updater(token=settings.TELEGRAM_TOKEN, use_context=True)
@@ -142,11 +161,11 @@ class Command(BaseCommand):
             entry_points=[CommandHandler('start', self.start)],
             states={
                 self.CHOICE: [
-                    MessageHandler(Filters.regex('Новый поиск'), self.callback_message_new_query),
+                    MessageHandler(Filters.regex('Новый поиск'), self.callback_new_query),
                     MessageHandler(Filters.regex('История'), self.callback_history),
                 ],
                 self.DATA: [
-                    MessageHandler(Filters.text & (~Filters.command), self.callback_new_query),
+                    MessageHandler(Filters.text & (~Filters.command), self.callback_message_new_query),
                     CommandHandler('skip', self.skip)
                 ],
                 self.CREATE: [
