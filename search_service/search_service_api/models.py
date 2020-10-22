@@ -1,5 +1,28 @@
 from django.db import models
-from django.utils import timezone
+from django.contrib.auth.models import User, Permission
+
+
+class CustomerUser(User):
+    permission_to_view = models.BooleanField(default=False)
+    permission_to_view_and_delete = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        super(CustomerUser, self).save(*args, **kwargs)
+
+        permission_to_view = Permission.objects.get(
+            codename='view_searcharea'
+        )
+        permission_to_delete = Permission.objects.get(
+            codename='view_searcharea'
+        )
+
+        if self.permission_to_view:
+            self.user_permissions.add(permission_to_view)
+
+        if self.permission_to_view_and_delete:
+            self.user_permissions.add(permission_to_view, permission_to_delete)
+
+        super(CustomerUser, self).save(*args, **kwargs)
 
 
 class BotUser(models.Model):

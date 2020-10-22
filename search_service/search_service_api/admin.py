@@ -1,6 +1,11 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
 
-from .models import BotUser, ResultSearch, SearchArea
+from .models import BotUser, ResultSearch, SearchArea, CustomerUser
+
+
+admin.site.unregister(User)
+admin.site.register(CustomerUser)
 
 
 class ResultsInline(admin.TabularInline):
