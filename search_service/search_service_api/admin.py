@@ -9,7 +9,7 @@ class ResultsInline(admin.TabularInline):
 
 @admin.register(BotUser)
 class BotUserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user_id', 'username')
+    list_display = ('user_id', 'username')
     inlines = [ResultsInline, ]
 
 

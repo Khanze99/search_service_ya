@@ -7,7 +7,8 @@ from telegram import KeyboardButton, ReplyKeyboardMarkup
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from search_service_api.helpers import get_history, check_user_in_db
+from search_service_api.helpers import get_history, check_user_in_db, \
+    get_allowed_addresses, save_result
 from search_service_api.models import BotUser
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -21,7 +22,7 @@ class Command(BaseCommand):
     def start(self, update, context):
         user = update.message.from_user
         logger.info("User %s started the conversation.", user.first_name)
-        text = 'Добро пожаловать! Я поисковой бот, который геокодирует ваш запрос через API геокодер Яндекса\n' \
+        text = 'Добро пожаловать! Я поисковой бот, который геокодирует ваш запрос через API геокодер Яндекса с фильтрацией разрешенных областей\n' \
                'QR клавиатура:\n' \
                '1. "Новый запрос" - новый запрос на геокодирование места\n' \
                '2. "История" - показывает 5 ваших последних запросов\n' \
@@ -76,12 +77,20 @@ class Command(BaseCommand):
         return self.CHOICE
 
     def callback_message_new_query(self, update, context):
-        user = update.message.from_user
+        user_id = update.message.from_user.id
         query = update.message.text
         params = {'geocode': query,
                   'apikey': settings.YANDEX_GEOCODER_TOKEN,
                   'format': 'json'}
+        result = requests.get(settings.YANDEX_URL, params=params).json()
+        allowed_addresses = get_allowed_addresses(result)
 
+        if allowed_addresses:
+            text = allowed_addresses[0]
+        else:
+            text = 'Не найдено'
+
+        save_result(user_id, query, text)
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
@@ -89,7 +98,7 @@ class Command(BaseCommand):
             ]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-        update.message.reply_text(text=query, reply_markup=reply_markup)
+        update.message.reply_text(text=text, reply_markup=reply_markup)
 
         return self.CHOICE
 

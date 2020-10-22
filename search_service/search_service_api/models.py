@@ -3,8 +3,8 @@ from django.utils import timezone
 
 
 class BotUser(models.Model):
-    user_id = models.IntegerField(verbose_name='Идентификатор пользователя', unique=True)
-    username = models.CharField(verbose_name='Никнейм пользователя', max_length=255, blank=True, null=True)
+    user_id = models.IntegerField(verbose_name='Идентификатор пользователя telegram', primary_key=True)
+    username = models.CharField(verbose_name='Юзернейм пользователя', max_length=255, blank=True, null=True)
 
     def __str__(self):
         if self.username:
