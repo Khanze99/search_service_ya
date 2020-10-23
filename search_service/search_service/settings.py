@@ -28,9 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'j^_9cmabu&h@qz%=v2n@7-u()sph7f3n!)l34^yb(*zz=yrcsc'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -129,6 +129,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 REST_FRAMEWORK = {
@@ -143,4 +144,39 @@ REST_FRAMEWORK = {
 YANDEX_URL = 'https://geocode-maps.yandex.ru/1.x'
 YANDEX_GEOCODER_TOKEN = os.getenv('YANDEX_GEOCODER_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'service.log',
+            'formatter': 'verbose'
+
+        }
+    },
+    'loggers': {
+        'service': {
+            'handlers': ['console', 'file'],
+            'propagate': True,
+        },
+    }
+}
 

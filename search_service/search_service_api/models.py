@@ -2,27 +2,31 @@ from django.db import models
 from django.contrib.auth.models import User, Permission
 
 
-class CustomerUser(User):
+class PermissionUser(models.Model):
     permission_to_view = models.BooleanField(default=False)
     permission_to_view_and_delete = models.BooleanField(default=False)
+    user = models.OneToOneField(User, related_name='permissions', on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        super(CustomerUser, self).save(*args, **kwargs)
 
         permission_to_view = Permission.objects.get(
             codename='view_searcharea'
         )
         permission_to_delete = Permission.objects.get(
-            codename='view_searcharea'
+            codename='delete_searcharea'
         )
+        self.user.user_permissions.clear()
 
         if self.permission_to_view:
-            self.user_permissions.add(permission_to_view)
+            self.user.user_permissions.add(permission_to_view)
 
         if self.permission_to_view_and_delete:
-            self.user_permissions.add(permission_to_view, permission_to_delete)
+            self.user.user_permissions.add(permission_to_view, permission_to_delete)
 
-        super(CustomerUser, self).save(*args, **kwargs)
+        super(PermissionUser, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.user.__str__()
 
 
 class BotUser(models.Model):

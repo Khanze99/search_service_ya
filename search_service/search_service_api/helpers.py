@@ -4,12 +4,15 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from .models import ResultSearch, BotUser, SearchArea
 
+logger = logging.getLogger('service')
+
 
 def get_history(user):
     """
     :param user: telegram.user.User
     :return: result: dict: result: list, count: int
     """
+    logger.info('Get history from db')
     bot_user = BotUser.objects.get(user_id=user.id)
     count = bot_user.results.all().count()
     objects_list = bot_user.results.all().values('query', 'result', 'query_date')[:5]
@@ -24,8 +27,10 @@ def check_user_in_db(user):
     :param user: telegram.user.User
     :return: flag: boolean
     """
+
+    logger.info('Check user {} in db'.format(user.username))
     try:
-        user = BotUser.objects.get(user_id=user.id)
+        BotUser.objects.get(user_id=user.id)
         have_a_user_in_db = True
     except ObjectDoesNotExist:
         have_a_user_in_db = False
@@ -64,14 +69,13 @@ def get_allowed_addresses(result_geocode):
             address = feature['GeoObject']['metaDataProperty']['GeocoderMetaData']['Address']['formatted']
             description_list = edit_strip_obj_in_list(feature['GeoObject']['description'].split(','))
         except KeyError:
-            print(f'KEY ERROR : {feature}')
+            logger.error(f'KEY ERROR : {feature}')
 
         if address is not None:
             filtered_objects = SearchArea.objects.filter(name__in=description_list)
 
         if filtered_objects:
             allowed_addresses_list.append(address)
-
     return allowed_addresses_list
 
 
@@ -83,4 +87,5 @@ def save_result(bot_user_id, query, result):
     :param result: str
     :return: bool
     """
+    logger.info('Save result query')
     ResultSearch.objects.create(bot_user_id=bot_user_id, query=query, result=result)

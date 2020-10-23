@@ -12,7 +12,7 @@ from search_service_api.helpers import get_history, check_user_in_db, \
 from search_service_api.models import BotUser
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('service')
 
 
 class Command(BaseCommand):
@@ -32,7 +32,8 @@ class Command(BaseCommand):
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
+                KeyboardButton('История 💾'),
+                KeyboardButton('Завершить')
             ]
         ]
 
@@ -44,6 +45,8 @@ class Command(BaseCommand):
     def callback_new_query(self, update, context):
         user = update.message.from_user
         flag = check_user_in_db(user)
+
+        logger.info('Checking user {} in the database'.format(user.first_name))
 
         if flag is False:
             keyboard = [
@@ -63,11 +66,14 @@ class Command(BaseCommand):
         return self.DATA
 
     def skip(self, update, context):
+        user = update.message.from_user
         text = 'Вы отменили запрос.'
+        logger.info('Сanceling the request to save the user {} in the database'.format(user.first_name))
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
+                KeyboardButton('История 💾'),
+                KeyboardButton('Завершить')
             ]
         ]
 
@@ -77,8 +83,10 @@ class Command(BaseCommand):
         return self.CHOICE
 
     def callback_message_new_query(self, update, context):
-        user_id = update.message.from_user.id
+        user = update.message.from_user
+        user_id = user.id
         query = update.message.text
+        logger.info('User {user} request for geocoding: {query}'.format(user=user.first_name, query=query))
         params = {'geocode': query,
                   'apikey': settings.YANDEX_GEOCODER_TOKEN,
                   'format': 'json'}
@@ -94,7 +102,8 @@ class Command(BaseCommand):
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
+                KeyboardButton('История 💾'),
+                KeyboardButton('Завершить')
             ]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
@@ -106,6 +115,7 @@ class Command(BaseCommand):
 
         user = update.message.from_user
         flag = check_user_in_db(user)
+        logger.info('Retrieving user {} history'.format(user.first_name))
 
         if flag is False:
             keyboard = [
@@ -133,7 +143,8 @@ class Command(BaseCommand):
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
+                KeyboardButton('История 💾'),
+                KeyboardButton('Завершить')
             ]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
@@ -143,6 +154,7 @@ class Command(BaseCommand):
 
     def callback_create_user(self, update, context):
         user = update.message.from_user
+        logger.info('Create new user {}'.format(user.first_name))
         try:
             BotUser.objects.create(user_id=user.id, username=user.username)
         except:
@@ -151,7 +163,8 @@ class Command(BaseCommand):
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),
-                KeyboardButton('История 💾')
+                KeyboardButton('История 💾'),
+                KeyboardButton('Завершить')
             ]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
@@ -160,7 +173,15 @@ class Command(BaseCommand):
         return self.CHOICE
 
     def skip_create_user(self, update, context):
+        user = update.message.from_user
+        logger.info('User {} skipping'.format(user.first_name))
         update.message.reply_text(text='Вы отказались. Для того чтобы перейти в начальное состояние используйте /start')
+        return ConversationHandler.END
+
+    def end_process(self, update, context):
+        user = update.message.from_user
+        logger.info('End of work | {}'.format(user.first_name))
+        update.message.reply_text(text='Вы завершили процесс работы с ботом. Для того чтобы возобновить работу, напишите команду /start')
         return ConversationHandler.END
 
     def main(self):
@@ -172,6 +193,7 @@ class Command(BaseCommand):
                 self.CHOICE: [
                     MessageHandler(Filters.regex('Новый поиск'), self.callback_new_query),
                     MessageHandler(Filters.regex('История'), self.callback_history),
+                    MessageHandler(Filters.regex('Завершить'), self.end_process)
                 ],
                 self.DATA: [
                     MessageHandler(Filters.text & (~Filters.command), self.callback_message_new_query),
