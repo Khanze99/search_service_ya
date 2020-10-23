@@ -4,8 +4,8 @@ https://t.me/SearchYABot
 
 # Описание разработки бота и панели администратора
 
-1. Бот search_service/search_service_api/management/commands/bot.py
-2. Модели search_service/search_service_api/models.py
+1. Бот https://github.com/Khanze99/search_service_ya/blob/main/search_service/search_service_api/management/commands/bot.py
+2. Модели https://github.com/Khanze99/search_service_ya/blob/main/search_service/search_service_api/models.py
 
 ![Схема](bot_django_schema.png)
 
