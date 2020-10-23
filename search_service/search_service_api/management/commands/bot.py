@@ -93,13 +93,16 @@ class Command(BaseCommand):
                   'format': 'json'}
         result = requests.get(settings.YANDEX_URL, params=params).json()
         allowed_addresses = get_allowed_addresses(result)
+        text = ''
 
         if allowed_addresses:
-            text = allowed_addresses[0]
+            for address in enumerate(allowed_addresses, 1):
+                text += '{n}. {address}\n'.format(n=address[0], address=address[1])
+                save_result(user_id, query, address[1])
+
         else:
             text = 'Не найдено'
 
-        save_result(user_id, query, text)
         keyboard = [
             [
                 KeyboardButton('Новый поиск 🌏'),

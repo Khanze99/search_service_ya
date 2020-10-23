@@ -52,12 +52,29 @@ def edit_strip_obj_in_list(objects: list):
     return edited_list
 
 
+def get_area_use_dict():
+    area_use_dict = {}
+    for area in SearchArea.objects.values('name'):
+        area_use_dict[area['name']] = False
+
+    return area_use_dict
+
+
+def set_area_use_flag(area_dict, description_list):
+    for area in area_dict:
+        if area in description_list:
+            area_dict[area] = True
+
+    return area_dict
+
+
 def get_allowed_addresses(result_geocode):
     """
 
     :param result_geocode: dict
-    :return:
+    :return: list
     """
+    area_use_dict = get_area_use_dict()
     features = result_geocode['response']['GeoObjectCollection']['featureMember']
     allowed_addresses_list = []
     address = None
@@ -70,12 +87,20 @@ def get_allowed_addresses(result_geocode):
             description_list = edit_strip_obj_in_list(feature['GeoObject']['description'].split(','))
         except KeyError:
             logger.error(f'KEY ERROR : {feature}')
+            continue
 
         if address is not None:
             filtered_objects = SearchArea.objects.filter(name__in=description_list)
 
-        if filtered_objects:
-            allowed_addresses_list.append(address)
+        for area in area_use_dict:
+            if area in description_list:
+                if area_use_dict[area]:
+                    continue
+
+                if filtered_objects:
+                    area_use_dict[area] = True
+                    allowed_addresses_list.append(address)
+
     return allowed_addresses_list
 
 

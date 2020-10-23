@@ -27,7 +27,7 @@ https://t.me/SearchYABot
 sudo apt update
 sudo apt upgrade
 
-sudo apt install python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx curl
+sudo apt install python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx curl vim
 
 ```
 
