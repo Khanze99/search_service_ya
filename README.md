@@ -2,6 +2,9 @@
 
 https://t.me/SearchYABot
 
+# Само тестовое
+https://docs.google.com/document/d/1uUZdsxpA4AQ7PRMEs6a77uFLk8qX7xis8J0Q61sPQuA/edit#
+
 # Описание разработки бота и панели администратора
 
 1. Бот https://github.com/Khanze99/search_service_ya/blob/main/search_service/search_service_api/management/commands/bot.py
